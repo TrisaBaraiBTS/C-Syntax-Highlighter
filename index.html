@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C Syntax Highlighter & Lexical Analyzer</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-badge">
+          <span class="c-badge">C</span>
+        </div>
+        <div class="header-titles">
+          <h1>C Syntax Highlighter <span class="tag">Compiler Design Project</span></h1>
+          <p class="subtitle">Custom Lexical Analyzer (Scanner & Tokenizer) following the Maximal-Munch Principle</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="sample-picker">
+          <label for="sampleSelect">Sample Program:</label>
+          <select id="sampleSelect" title="Select a pre-built C program">
+            <option value="hello">1. Hello World & Preprocessor</option>
+            <option value="factorial">2. Factorial & Pointers</option>
+            <option value="bubbleSort">3. Bubble Sort & Arrays</option>
+            <option value="complex">4. Structs, Floats & Multi-line Comments</option>
+          </select>
+          <button id="btnLoadSample" class="btn btn-secondary" title="Load selected sample code">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Load
+          </button>
+        </div>
+
+        <button id="btnHighlight" class="btn btn-primary" title="Run lexical analysis and syntax highlighting">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Highlight
+        </button>
+        <button id="btnCopy" class="btn btn-secondary" title="Copy code to clipboard">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          Copy
+        </button>
+        <button id="btnClear" class="btn btn-danger" title="Clear editor and token results">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          Clear
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Left Panel: Code Editor -->
+      <section class="panel editor-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            <span>C Source Code Editor</span>
+          </div>
+          <div class="editor-meta">
+            <span id="lineColCounter">Line: 1, Col: 1</span>
+            <span class="divider">|</span>
+            <span id="charCount">0 characters</span>
+          </div>
+        </div>
+
+        <!-- Dual Layer Editor Container -->
+        <div class="editor-viewport">
+          <div id="lineNumbers" class="line-numbers">1</div>
+          <div class="editor-stage">
+            <!-- Background Layer: Highlighted HTML -->
+            <pre id="highlightDisplay" class="highlight-display" aria-hidden="true"><code id="highlightCode"></code></pre>
+            <!-- Foreground Layer: Transparent Textarea -->
+            <textarea id="codeEditor" class="code-editor" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="// Type or paste your C code here...&#10;#include &lt;stdio.h&gt;&#10;&#10;int main() {&#10;    printf(&quot;Hello, Compiler Design!\\n&quot;);&#10;    return 0;&#10;}"></textarea>
+          </div>
+        </div>
+
+        <!-- Token Color Legend -->
+        <div class="token-legend">
+          <span class="legend-item"><span class="color-dot dot-preprocessor"></span>Preprocessor</span>
+          <span class="legend-item"><span class="color-dot dot-keyword"></span>Keyword</span>
+          <span class="legend-item"><span class="color-dot dot-identifier"></span>Identifier</span>
+          <span class="legend-item"><span class="color-dot dot-operator"></span>Operator</span>
+          <span class="legend-item"><span class="color-dot dot-constant"></span>Constant</span>
+          <span class="legend-item"><span class="color-dot dot-string"></span>String / Char</span>
+          <span class="legend-item"><span class="color-dot dot-comment"></span>Comment</span>
+          <span class="legend-item"><span class="color-dot dot-delimiter"></span>Delimiter</span>
+        </div>
+      </section>
+
+      <!-- Right Panel: Token Statistics & Analysis Table -->
+      <section class="panel analysis-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            <span>Lexical Analysis & Token Statistics</span>
+          </div>
+          <div class="table-actions">
+            <button id="btnExportCSV" class="btn btn-sm btn-secondary" title="Export tokens table as CSV">Export CSV</button>
+            <button id="btnExportJSON" class="btn btn-sm btn-secondary" title="Export tokens as JSON">Export JSON</button>
+          </div>
+        </div>
+
+        <!-- Statistics Badges Grid -->
+        <div class="stats-grid">
+          <div class="stat-card stat-total">
+            <span class="stat-num" id="statTotal">0</span>
+            <span class="stat-label">Total Tokens</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="statKeywords">0</span>
+            <span class="stat-label">Keywords</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="statIdentifiers">0</span>
+            <span class="stat-label">Identifiers</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="statConstants">0</span>
+            <span class="stat-label">Constants</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="statOperators">0</span>
+            <span class="stat-label">Operators</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="statStrings">0</span>
+            <span class="stat-label">Strings & Chars</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="statComments">0</span>
+            <span class="stat-label">Comments</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num" id="statPreprocessor">0</span>
+            <span class="stat-label">Preprocessor</span>
+          </div>
+        </div>
+
+        <!-- Table Filters & Search -->
+        <div class="table-controls">
+          <div class="filter-group">
+            <label for="filterType">Filter by Type:</label>
+            <select id="filterType">
+              <option value="ALL">All Tokens</option>
+              <option value="KEYWORD">Keywords</option>
+              <option value="IDENTIFIER">Identifiers</option>
+              <option value="CONSTANT">Constants</option>
+              <option value="OPERATOR">Operators</option>
+              <option value="STRING">Strings & Chars</option>
+              <option value="COMMENT">Comments</option>
+              <option value="PREPROCESSOR">Preprocessor</option>
+              <option value="DELIMITER">Delimiters</option>
+            </select>
+          </div>
+          <div class="search-group">
+            <input type="text" id="tokenSearch" placeholder="Search lexeme or type..." autocomplete="off">
+          </div>
+        </div>
+
+        <!-- Token Analysis Table -->
+        <div class="table-container">
+          <table class="token-table">
+            <thead>
+              <tr>
+                <th style="width: 10%;">#</th>
+                <th style="width: 32%;">Lexeme</th>
+                <th style="width: 33%;">Token Type</th>
+                <th style="width: 25%;">Line : Col</th>
+              </tr>
+            </thead>
+            <tbody id="tokenTableBody">
+              <tr class="empty-row">
+                <td colspan="4">No tokens to display. Type C code or load a sample.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden">Copied to clipboard!</div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
